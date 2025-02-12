@@ -1,0 +1,90 @@
+---
+title: "STA490 Collaborative Project EDA"
+author: "Nick LuFeng Pan"
+date: "20/02/2023"
+output: pdf_document
+---
+
+
+# Introduction
+With the arrival of the 21st century, various fields are becoming more developed and among all of them, the medical field will undoubtedly be one of the most significant ones. In order to reach further in the medical field, statistical analysis certainly plays a vital role within it and contributes countless important results. Speaking of the research question today, it is based on a biological experiment and the final goal is related to the medical field as well. Due to the fact that plenty of biological terminologies will be related to this experiment and since it is a statistical introduction, only the major terms will be explained and the roles they played in this experiment. The research question is "How does mechanical stress regulate global DNA methylation and chromatin openness?" DNA methylation is useful in wound healing and it is one of the key terms in this experiment because the final goal of this experiment is to test if the DNA methylation level can be increased by mechanically inducing chromatin stretch. Furthermore, the experiment is separated into a control group and different treatment groups where the treatment groups will be used to test the DNA methylation levels caused by different mechanical stresses which are being applied onto those cells. Eventually, each treatment group will output results which respond to the research question and the hypothesis indicates that "Mechanically induced chromatin stretching makes DNA more accessible for DNA methylation leading to a memorized gene expression profile in MSCs." In plain words, mechanical stress will be beneficial to increase the DNA methylation.
+
+# Data Cleaning
+Before presenting further details about the variables collected within the data set, the process of data cleaning will be introduced. There are totally two data sets and the first data set contains the data of cell stretching's DNA methylation values and the second data set contains the results from different treatment groups and mainly discuss how TRAP6 and LPA affects DNA methylation.(TRAP6 & LPA are chemical materials) To begin with, the first data set was precise enough that it did not require too much cleaning. I have deleted a few meaningless columns that include the first, the eighth, the tenth, and the eleventh columns. Moreover, most of the numerical outputs were over different decimal places, so I have unified them into the same decimal place. On the other hand, the second data set was organized in a completely different way. The second data set contained coloring columns which cannot be multiplied in R markdowns, so I have made a new data set completely based on the second data set. In the second data set, there were a lot of missing observations and even an entire column was missing. Since the full data set was not yet given, the second data set may be potentially problematic. However, each variable contains three outputs that represent three different repeats of the experiment and for those variables that are missing an entire repeat, I have reasonably placed the missing values with the average of the other two repeats. Moreover, due to the fact that the number of outputs of each variable under each repeat is different, which is a interesting phenomenon because usually when people record results of a experiment, it is important to make sure each treatment are tested under the same number of trials and the number of outputs will be the same as well. In this case,  in order to draw a meaningful comparison between the outputs of each treatment group, I calculated their average and compared the average across groups. As a result, the final second data set is not as messy as the original data was, but only contains the average results of each group and missing values were replaced as well. 
+
+```{r, echo=FALSE}
+data1 <- read.csv("Cell stretching DNAmethylation1.csv")
+data1 <- data1[, -c(1, 8, 10, 11)]
+data1 <- na.omit(data1)
+data1$Mean <- round(data1$Mean)
+data1$Area <- round(data1$Area)
+data1$IntDen <- round(data1$IntDen)
+```
+
+```{r, echo=FALSE}
+Repeats <- c("Repeat1", "Repeat2", "Repeat3")
+Control <- c( "1.0000", "0.9925", "1.0000")
+Trap6_2hr <- c("4.7989", "1.4799", "3.6581")
+Trap6_8hr <- c("1.8658", "0.8706", "2.8611")
+Trap6_24hr <- c("1.9751", "2.7274", "1.2228")
+Trap6_3days <- c("1.0744", "1.0235", "0.9726")
+LPA_2hr <- c("2.4412", "1.5445", "0.8902")
+LPA_8hr <- c("1.2136", "1.0981", "1.3292")
+LPA_24hr <- c("1.2479", "0.5143", "1.9816")
+LPA_3days <- c("1.3520", "1.2556", "1.1593")
+
+data2 <- data.frame(Repeats, Control, Trap6_2hr, Trap6_8hr, Trap6_24hr, Trap6_3days, LPA_2hr, LPA_8hr, LPA_24hr, LPA_3days)
+```
+
+# Data Summary
+## First Data Set
+Based on the research question, we are aiming to discuss some potentially relevant variables before getting into a full report. In the first data set, the variable mean is considered as the most significant one because it represents 5mC Intensity(DNA methylation). In another word, the result of the mean directly reflects whether the cell stretching is contributing significantly toward the research question or not. Since the data are separated into control groups and treatment groups, it allows us to directly compare the result between the two.
+
+```{r, echo=FALSE, fig.cap="Control group vs Treatment group"}
+par(mfrow=c(2,1))
+data3 <- data1$Mean[data1$Label=="control no stretch"]
+#mean(data1$Mean[data1$Label=="control no stretch"])
+barplot(data3, xlab="5mC Intensity")
+
+
+data4 <- data1$Mean[data1$Label=="max stretch"]
+#mean(data1$Mean[data1$Label=="max stretch"])
+barplot(data4, xlab="5mC Intensity")
+```
+
+The two plots above display the 5mC Intensity(DNA methylation) of both control groups and treatment groups. The control groups remain no stretch applied onto the cells and the treatment groups are stretched. Based on the above plots, a more stable pattern is detected, but the average value of the treatment groups is in fact lower than the control ones. Therefore, the result is unexpected, but may potentially exist confounders and further analysis is required to draw any conclusion.
+
+\newpage
+
+## Second Data Set
+For the second data set, there is a control group as the reference and other variables are mostly different treatment groups. There are two different chemical materials being applied onto the cells which are TRAP6 and LPA, and treatment groups divided by checking their values during time periods. For example, there are TRAP6 for 2 hours, 8 hours, 24 hours, etc. The data contains three different repeats of this experiment .However, this data set is missing a lot of values and even an entire repeat, so in order to compare them, I have replaced them with the average and compared the mean of each repeats under different treatment groups.
+
+```{r, echo=FALSE}
+data2$Trap6_2hr <- as.numeric(data2$Trap6_2hr)
+data2$Trap6_8hr <- as.numeric(data2$Trap6_8hr)
+data2$Trap6_24hr <- as.numeric(data2$Trap6_24hr)
+data2$Trap6_3days <- as.numeric(data2$Trap6_3days)
+data2$LPA_2hr <- as.numeric(data2$LPA_2hr)
+data2$LPA_8hr <- as.numeric(data2$LPA_8hr)
+data2$LPA_24hr <- as.numeric(data2$LPA_24hr)
+data2$LPA_3days <- as.numeric(data2$LPA_3days)
+data2$Control <- as.numeric(data2$Control)
+#summary(data2)
+Average_re <- c("Average of 3 Repeats")
+Control <- c("1")
+Trap6_2hr <- c("3.3")
+Trap6_8hr <- c("1.8")
+Trap6_24hr <- c("1.9")
+Trap6_3days <- c("1.0")
+LPA_2hr <- c("1.6")
+LPA_8hr <- c("1.2")
+LPA_24hr <- c("1.2")
+LPA_3days <- c("1.3")
+Table <- data.frame(Average_re, Control, Trap6_2hr, Trap6_8hr, Trap6_24hr, Trap6_3days, LPA_2hr, LPA_8hr, LPA_24hr, LPA_3days)
+knitr::kable(Table, caption="Numerical Summary of the Average 5mC Intensity of Three Repeats", col.names = c("Average", "Control", "TRAP6 2hr", "TRAP6 8hr", "TRAP6 24hr", "TRAP6 3days", "LPA 2hr", "LPA 8hr", "LPA 24hr", "LPA 3days"))
+```
+
+The table above shows a direct comparison between each treatment's result. Instead of showing each repeat one by one, it is more precise to display a mean of three repeats which reveals the overall performance of different treatments. As can be observed, the TRAP6 after 2 hours is outperforming every other treatment. Most of the others fall between the range of 1.2 to 1.9, and TRAP6 after 2 hours reached 3.3. 
+
+
+
