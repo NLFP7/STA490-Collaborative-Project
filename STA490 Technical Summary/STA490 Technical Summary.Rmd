@@ -1,0 +1,197 @@
+---
+title: "STA490 Tech Summary"
+author: "Nick LuFeng Pan"
+date: "05/03/2023"
+output: pdf_document
+---
+
+```{r include=FALSE}
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(car)
+```
+
+
+# Introduction
+With the dawn of the 21st century, numerous fields are experiencing significant growth and development, and it is widely acknowledged that the medical field will be one of the most important among them. Statistical analysis undoubtedly plays a crucial role in the advancement of the medical field, contributing numerous important results. The focus of today's research inquiry is a biological experiment, as the experiment will involve numerous biological terminologies and statistical techniques, only the most significant terms will be explained, and their respective roles in the experiment elucidated. The research question under consideration is "How does mechanical stress regulate global DNA methylation and chromatin openness?" DNA methylation, a process that aids in wound healing, is a key term in this experiment. The DNA methylation can be measured by the 5mC intensity which is the term will be oftenly used throughout the report. The experiment is divided into a control group and several treatment groups, with the treatment groups being used to test the impact of different mechanical stresses on DNA methylation levels in cells. There will be in total two different types of treatments introduced in the report and one involves physical changes to the cell and other one is about chemical changes. The results of each treatment group will ultimately provide an answer to the research question, and the hypothesis posits that "Mechanically induced chromatin stretching makes DNA more accessible for DNA methylation leading to a memorized gene expression profile in MSCs." In simpler terms, mechanical stress is deemed beneficial in increasing 5mC intensity, which is the DNA methylation.
+
+# Data Cleaning
+Before presenting further details about the variables collected in the data set, it is important to discuss the process of data cleaning. The data set consists of two separate parts, with the first set containing data on DNA methylation values resulting from physical cell stretching and the second set discussing the effects of TRAP6 and LPA on DNA methylation in different treatment groups. In regards to the first data set, several modifications were made to the original data. Initially, the intensity outputs of the three columns were merged into a new column named "intensity" that contains 149 observations. Moreover, a new column named "treatment" was created to indicate the corresponding treatment group of each intensity observation. For instance, the 31st observation records a 0.578 5mC intensity, and the treatment column specifies the treatment group associated with this observation. Lastly, all the missing values were removed from the data since there were some left from the original data, and the order to treatment column and intensity were switch just for aesthetic purpose. On the other hand, the second data set includes coloring columns that were incompatible with R markdowns and had to be removed before import into R. Moreover, after the data can be manipulate in R markdowns, missing observations were removed from the data and since the data was originally containing the results of three repeats of a same experiment and due to the fact that there were too many missing values being removed, I have combined them into one repeat. Because due to the large amount of missing values, the results may be problematic if the number of observation is too small, and combing the observations from three repeats will fix this issue. After solving out the problem of missing values, the second data was changed into a another format that only contains two columns and one indicates the treatments and one indicates the 5mC intensity output under a treatment. This is for the convenience purpose of applying anova test later on and allows to compare the differences across treatments.
+
+
+```{r, echo=FALSE}
+# First data set
+data1 <- read.csv("Normalized Stretch Data.csv")
+data1 <- na.omit(data1)
+data1_new <- data.frame(intensity = c(data1$Control, data1$Min.Stretch, data1$Max.Stretch),
+                        treatment = 1:129)
+data1_new <- data1_new %>% mutate(treatment = ifelse(row_number() <= 43, "Control",
+                                                     ifelse(row_number() <= 86, "Min.Stretch", "Max.Stretch")))
+
+data1_new <- na.omit(data1_new)
+data1_new <- data1_new %>% select(treatment, intensity)
+```
+
+```{r, echo=FALSE}
+# Second data set
+data2 <- read.csv("ALL REPEATS TRAP6LPA DATA copy.csv")
+data2 <- data2[,-c(10,11)]
+data2 <- drop_na(data2)
+
+
+data2_new <- data.frame(Intensity = c(data2$Control, data2$TRAP6.2.hr, data2$TRAP6.8.hr, data2$TRAP6.24.hr, data2$TRAP6.3.days, data2$LPA.2.hr, data2$LPA.8.hr, data2$LPA.24.hr, data2$LPA.3.days),
+                        Treatment = 1:297)
+data2_new <- data2_new %>% mutate(Treatment = ifelse(row_number() <= 33, "Control",
+                                              ifelse(row_number() <= 66, "Trap6_2hr",
+                                              ifelse(row_number() <= 99, "Trap6_8hr",
+                                              ifelse(row_number() <= 132, "Trap6_24hr",
+                                              ifelse(row_number() <= 165, "Trap6_3days",
+                                              ifelse(row_number() <= 198, "LPA_2hr",
+                                              ifelse(row_number() <= 231, "LPA_8hr",
+                                              ifelse(row_number() <= 264, "LPA_24hr",
+                                              ifelse(row_number() <= 297, "LPA_3days"))))))))))
+data2_new <- data2_new %>% select(Treatment, Intensity)
+```
+
+# Methods
+The primary statistical analysis method to be introduced in this research study is the Analysis of Variance (ANOVA) test. Before discussing the reasons behind choosing ANOVA, a brief introduction to this statistical method will be provided. The ANOVA test, also known as the Analysis of Variance, is a statistical technique that permits the comparison of means across multiple groups. ANOVA mainly develops wether there exists significant differences in means across different groups. Furthermore, ANOVA relies on three fundamental assumptions: normal distribution of the population for each factor level, equal variance, and independence of data. After providing a brief introduction to the ANOVA test, a further explannation of why ANOVA test is chosen as the primary statistical method will be provided, as well as how it will contribute to achieving the research goal. The research goal is to study the impact of mechanical stress on DNA methylation. The first dataset includes the results of treatments involving physical changes, while the second dataset includes the results of treatments involving chemical treatment. By using the ANOVA test, it is possible to compare the means of the results across different treatments directly and to examine the relationship between the treatments and the response variable to determine whether significant differences exist. In this case, the results of the comparsion reveals whether those treatments are bringing positive affects to the 5mC intensity or not.  If significant differences are detected, then the Tukey's HSD test, which is a common post-hoc test, can be applied in order to determine which specific groups differ from others. All of these results are aiming to reveal whether the treatments are beneficial to DNA methylation or not.
+```{r include=FALSE}
+mod1 <- aov(intensity ~ treatment, data = data1_new)
+summary(mod1)
+
+mod2 <- aov(Intensity ~ Treatment, data = data2_new)
+summary(mod2)
+
+```
+
+```{r include=FALSE}
+tukey_mod <- TukeyHSD(mod1)
+print(tukey_mod)
+```
+
+```{r include=FALSE}
+tukey_mod2 <- TukeyHSD(mod2)
+print(tukey_mod)
+```
+
+
+# Results
+## First Model
+Based on the analysis of the data, the final models have been determined for two data sets and each consisting of one response variable and one independent variable. The model for first data set includes the 5mC intensity as the response variable, which is recorded under two different physical stretching methods. The independent variable is the treatment, which records two different types of physical stretching methods and a control group. The ANOVA model tests whether there are significant differences in means among the treatments. In the case of the first model, significant differences have been detected in means between all groups. Nevertheless, no conclusion can be drawn yet since further tests and visualizations are required to confirm the validity and correctness. As previously mentioned, if significant differences exist, Tukey's HSD test can be used to determine which specific groups are differing from others.
+
+```{r, echo=FALSE}
+Compare <- c("Max Stretch vs Control", "Min Stretch vs Control", "Min Stretch vs Max Stretch")
+cfi <- c("-0.5067, -0.0632", "-0.4657, -0.0221", "-0.1807, 0.2628")
+
+pv <- c("0.0078", "0.0273", "0.8993")
+
+Table <- data.frame(Compare, cfi, pv)
+knitr::kable(Table, caption = "Result Table of Tukey's HSD test of First Model", col.names = c("Comparison", "Confidence Interval", "P-values"))
+```
+
+The results of Tukey's HSD test are presented in the table above, which is indicating that both physical stretching methods have a significant effect on the 5mC intensity level compared to the control group. This finding suggests that the physical treatments have an impact on the 5mC intensity level. Notably, the Max stretch treatment exhibits the most significant difference when compared to the control group, as indicated by the smallest p-value. This finding suggests that the Max stretch treatment is likely to bring the greatest change in 5mC intensity level. However, the evidence is not yet sufficient to conclude whether the physical treatments have a positive or negative effect on the 5mC intensity level. Further investigation through visualizations will be conducted to determine the direction of the changes brought about by the physical treatments.
+
+
+
+```{r, echo=FALSE}
+ggplot(data = data1_new, mapping=aes(x=treatment, y=intensity)) + geom_boxplot() + ggtitle("Boxplot of Physical Treatments")
+```
+According to the boxplot above, it illustrates several numerical characteristics of the 5mC intensity resulted from each treatment group. Among all characteristics, the median value is particularly significant since it represents the middle value of a set of numbers. Based on the boxplot, the median value for the control group is significantly higher than  both physical treatment groups and such finding suggests that the 5mC intensity is lower after applying these physical treatments. Thus, the results confirm the conclusion drawn from the previous table, and further indicates that the change brought about by the physical treatments is negative. To conclude, applying physical treatments results in a decrease in the 5mC intensity level.
+
+## Second Model
+For the model of second data set, the response variable is the 5mC intensity and the independent variable is the treatment groups as well. The model again is based on ANOVA test and aiming to develop the potentially difference in means between treatment groups. According to the result of the model, the p-value is significant enough to conclude the existence of significant differences in means of the 5mC intensity across treatment groups. In other words, the results of chemical treatments contained in the second data indicates the chemical treatments are strongly affecting the 5mC intensity level compare to the control group. Since significant difference in mean being detected for the second model, the Tukey's HSD test will be applied in order to further develop the characteristics.
+
+\newpage
+
+```{r, echo=FALSE}
+Compare <- c("TRAP6 2hr vs Control", "TRAP6 8hr vs Control", "LPA 24hr vs Control")
+cfi <- c("2.2566, 3.1227", "1.1896, 2.0558", "0.5842, 1.4504")
+
+pv <- c("~ 0 ", "~ 0", "~ 0")
+
+
+Table <- data.frame(Compare, cfi, pv)
+knitr::kable(Table, caption = "Result Table of Tukey's HSD test of First Model", col.names = c("Comparison", "Confidence Interval", "P-values"))
+```
+
+The three of the most significant results from the Tukey's HSD test are presented in the table above, which is indicating that the three chemical treatments have significant effects on the 5mC intensity level compared to the control group. This finding suggests that the chemical treatments have an impact on the 5mC intensity level. Since all of their p-values are approaching zero and its unlikely to conclude which treatment contributes the greatest change toward the 5mC intensity. In addition, whether those significant differences lead to positive or negative changes is still unknown. Therefore, further investigation through visualizations will be conducted to determine the direction of the changes brought about by the chemical treatments.
+
+```{r, echo=FALSE}
+ggplot(data = data2_new, mapping=aes(x=Treatment, y=Intensity)) + geom_boxplot() + ggtitle("Boxplot of Chemcial Treatments")
+```
+
+According to the boxplot above, it illustrates various numerical characteristics of the 5mC intensity resulted from each treatment group. Among all characteristics, the median value is particularly significant since it represents the middle value of a set of numbers. The boxplot displayed the result of every chemical treatment groups, yet, only the TRAP6 2 hours, TRAP6 8 hours, and LPA 24 hours are the interested treatments based on previous results. As can be noticed, not only the median value of these three treatments, but also their overall behavior are higher than the control group. This finding suggests that the significant change is leading to a positive increase of the 5mC intensity. Among the three, the TRAP6 2 hours has the highest median value and its overall behavior is higher than other treatments. Thus, the results confirm the conclusion drawn from the previous table, and further indicates that the change brought about by the chemical treatments is positive. To conclude, applying chemical treatments results in a increase in the 5mC intensity level.
+
+
+
+\newpage
+
+# Full statistical Analysis
+After data cleaning process, the usual first step is to understand the data thoroughly and consider a suitable statistical method which potentially can contribute toward the research question. However, due to the uniqueness of the given data set, ANOVA test was determined already and in fact the result that ANOVA test outputs is perfecting answering the research question. However, the ANOVA test was not able to perform on the original data set due to its formatting issue. As a result, a new data set is created based on the raw data set and it is targetly for the purpose of performing ANOVA test. Since both data sets are about treatment and control, there are two data sets created.The procedures were explained in the data cleaning section.
+
+```{r}
+# First data set
+data1 <- read.csv("Normalized Stretch Data.csv")
+# Removing missing values
+data1 <- na.omit(data1)
+# Creating a data set with first variable recording 5mC intensity 
+# and second variable indicating treatment groups
+data1_new <- data.frame(intensity = c(data1$Control, 
+                                      data1$Min.Stretch, data1$Max.Stretch),
+                        treatment = 1:129)
+data1_new <- data1_new %>% mutate(treatment = 
+                                    ifelse(row_number() <= 43, "Control",
+                                    ifelse(row_number() <= 86, "Min.Stretch",
+                                           "Max.Stretch")))
+
+data1_new <- na.omit(data1_new)
+data1_new <- data1_new %>% select(treatment, intensity)
+```
+
+```{r}
+# Second data set
+data2 <- read.csv("ALL REPEATS TRAP6LPA DATA copy.csv")
+# Removing blank columns & missing values
+data2 <- data2[,-c(10,11)]
+data2 <- drop_na(data2)
+
+# Creating a data set with first variable recording 5mC intensity 
+# and second variable indicating treatment groups
+data2_new <- data.frame(Intensity = c(data2$Control, 
+                                      data2$Trap6_2hr, data2$Trap6_8hr, 
+                                      data2$Trap6_24hr, data2$Trap6_3days, 
+                                      data2$LPA_2hr, data2$LPA_8hr, data2$LPA_24hr, 
+                                      data2$LPA_3days),Treatment = 1:297)
+data2_new <- data2_new %>% mutate(Treatment = 
+                                    ifelse(row_number() <= 33, "Control",
+                                    ifelse(row_number() <= 66, "Trap6_2hr",
+                                    ifelse(row_number() <= 99, "Trap6_8hr",
+                                    ifelse(row_number() <= 132, "Trap6_24hr",
+                                    ifelse(row_number() <= 165, "Trap6_3days",
+                                    ifelse(row_number() <= 198, "LPA_2hr",
+                                    ifelse(row_number() <= 231, "LPA_8hr",
+                                    ifelse(row_number() <= 264, "LPA_24hr",
+                                    ifelse(row_number() <= 297, "LPA_3days"))))))))))
+data2_new <- data2_new %>% select(Treatment, Intensity)
+```
+
+Moreover, the ANOVA test is being introduced in the method section and the reasons of choosing it was explained as well as its appropriateness. In order to verify the appropriateness, there are three major assumptions of ANOVA test which need to verified.
+
+```{r}
+par(mfrow=c(2,1))
+qqnorm(data1_new$intensity)
+qqnorm(data2_new$Intensity)
+```
+Based on the two normality plots above, they are meant to verify the appropriateness of the ANOVA test, and the first plot cuts off at 0 ,but performing normally after the cut off at 0. So it may be minorly violating the assumption. The second plot is more following the normality behavior in the plot and no violation being detected.
+
+\newpage
+
+```{r,warning=FALSE}
+leveneTest(intensity ~ treatment, data = data1_new)
+leveneTest(Intensity ~ Treatment, data = data2_new)
+```
+
+The Levene test is meant to verify the equal variance assumption, as the result can be observed, the first data across the threshold in a small degree which is violating the assumption, but the second data is violating the assumption.
+
+Lastly, the independence of data is guaranteed since the data points were collected during the experiments and the collecting process were designed to guarantee the independence of the result. Such procedures were verified with the experimenter as well.
